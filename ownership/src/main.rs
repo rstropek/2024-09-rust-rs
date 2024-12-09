@@ -30,6 +30,12 @@ fn main() {
     let numbers2 = &mut numbers;
     numbers2.push(6);
     println!("{}", numbers2.len());
+
+    let mut numbers = vec![1, 2, 3, 4, 5];
+    let ro_borrowed_numbers = &numbers; // Read-only borrow of numbers
+    // The following line is not possible because numbers is already borrowed immutably
+    //let rw_borrowed_numbers = &mut numbers; // Read-write borrow of numbers
+    println!("{}", ro_borrowed_numbers.len());
 }
 
 fn create_vec() -> Vec<i32> {
