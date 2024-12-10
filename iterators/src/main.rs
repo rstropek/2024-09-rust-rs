@@ -68,4 +68,7 @@ fn main() {
     for fib in my_fib {
         println!("{fib}");
     }
+
+    let mut registers = [1, 2, 3, 4];
+    registers.iter_mut().for_each(|r| *r += 1);
 }
