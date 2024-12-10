@@ -1,6 +1,6 @@
 #![allow(dead_code)]
 
-use std::fmt::Display;
+use std::{fmt::Display, str::FromStr};
 
 trait Billable {
     fn total(&self) -> f32;
@@ -75,6 +75,19 @@ struct CodingWork {
     size: ShirtSize,
 }
 
+impl FromStr for CodingWork {
+    type Err = ();
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(Self { size: match s {
+            "small" => ShirtSize::Small,
+            "medium" => ShirtSize::Medium,
+            "large" => ShirtSize::Large,
+            _ => return Err(()),
+        } })
+    }
+}
+
 impl Billable for CodingWork {
     fn total(&self) -> f32 {
         match self.size {
@@ -107,6 +120,32 @@ impl<T: Billable> Billable for Vec<T> {
     }
 }
 
+fn create_billable(what: &str, hours: f32, rate: f32) -> impl Billable {
+    ConsultingWork::new(what, hours, rate)
+}
+
+fn create_material(costs: f32) -> Box<dyn Billable> {
+    if costs < 1000.0 {
+        Box::new(ConsultingWork::new("Material", 1.0, costs))
+    } else {
+        Box::new(costs)
+    }
+}
+
+fn print_dyn_billable(b: &dyn Billable) {
+    println!("Total: {:.2}", b.total());
+}
+
+fn print_something_on_heap(b: &Box<impl std::fmt::Debug>) {
+    println!("{:?}", b);
+}
+
+trait BillableDebug: std::fmt::Debug + Billable {}
+
+fn print_billable_debug(b: &impl BillableDebug) {
+    println!("{b:?}{0}", b.total());
+}
+
 fn main() {
     let work = ConsultingWork::new("Rust Training", 160.0, 150.0);
     println!("{:?}", work);
@@ -136,5 +175,30 @@ fn main() {
     println!("{:?}", work_array);
     print_total(&work_array);
     print_points(&work_array);
-}
 
+    let work = create_billable("Rust Training", 160.0, 150.0);
+    print_total(&work);
+    print_points(&work);
+
+    let work = create_material(100.0);
+    print_dyn_billable(work.as_ref());
+
+    let work: Vec<Box<dyn Billable>> = vec![
+        Box::new(100.0),
+        Box::new(ConsultingWork::new("Rust Training", 160.0, 150.0)),
+        Box::new(CodingWork { size: ShirtSize::Large }),
+    ];
+
+    for w in work.iter().map(|w| w.as_ref()) {
+        print_dyn_billable(w);
+    }
+
+    let work = CodingWork { size: ShirtSize::Large };
+    print_dyn_billable(&work);
+    // print_something_on_heap(&work); -> does not work
+
+    let work = Box::new(CodingWork { size: ShirtSize::Large });
+    print_something_on_heap(&work);
+
+    let coding_work = "large".parse::<CodingWork>().unwrap();
+}
